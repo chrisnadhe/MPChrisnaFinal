@@ -1,12 +1,23 @@
 import React, {useState, useEffect} from 'react';
-import {Alert, View, Text, StyleSheet, Platform} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  PermissionsAndroid,
+  PermissionsIOS,
+} from 'react-native';
 import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 import Config from 'react-native-config';
 
 const apiKey = Config.REACT_APP_GOOGLE_MAPS_API_KEY;
+const GeoApiKey = Config.REACT_APP_GEOAPIFY_API_KEY;
 
-function MapsScreen() {
+function MapsScreen({route}) {
+  const {selectedState = 'Alabama'} = route.params;
+
   const [isLoading, setIsLoading] = useState(true);
+
   const [initialRegion, setInitialRegion] = useState({
     latitude: -6.17511,
     longitude: 106.82725,
@@ -15,23 +26,55 @@ function MapsScreen() {
   });
 
   useEffect(() => {
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 2000);
+    fetch(
+      `https://api.geoapify.com/v1/geocode/search?text=${selectedState}&apiKey=${GeoApiKey}`,
+    )
+      .then(response => response.json())
+      .then(stateData => {
+        const {lat = 33.2588817, lon = -86.8295337} =
+          stateData.features[0].properties;
+        setInitialRegion({
+          latitude: lat,
+          longitude: lon,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      });
+  }, [selectedState]);
+
+  const [hasLocationPermission, setHasLocationPermission] = useState(false);
+
+  useEffect(() => {
+    requestLocationPermission()
+      .then(setHasLocationPermission)
+      .finally(() => setIsLoading(false));
   }, []);
 
+  const requestLocationPermission = async () => {
+    if (Platform.OS === 'ios') {
+      const status = await PermissionsIOS.request('location');
+      return status === 'authorized';
+    } else {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      );
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+  };
+
+  if (isLoading) {
+    return <Text>Loading...</Text>;
+  }
+
   return (
-    <View style={{flex: 1}}>
-      {isLoading ? (
-        <Text style={styles.loadingText}>Loading map...</Text>
-      ) : (
-        <MapView
-          provider={PROVIDER_GOOGLE}
-          apiKey={apiKey}
-          style={styles.map}
-          initialRegion={initialRegion}
-        />
-      )}
+    <View style={styles.container}>
+      <MapView
+        provider={PROVIDER_GOOGLE}
+        apiKey={apiKey}
+        style={styles.map}
+        initialRegion={initialRegion}
+        showsUserLocation={hasLocationPermission}
+      />
     </View>
   );
 }
@@ -44,11 +87,6 @@ const styles = StyleSheet.create({
   },
   map: {
     ...StyleSheet.absoluteFillObject,
-  },
-  loadingText: {
-    fontSize: 20,
-    textAlign: 'center',
-    marginTop: 20,
   },
 });
 
