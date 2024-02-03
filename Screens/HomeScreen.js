@@ -28,13 +28,14 @@ const HomeScreen = () => {
 
   const renderItem = ({item}) => {
     // const imagePath = `../assets/flags/Flag_of_${item.State.replace(' ', '_')}.png`;
-    const imageName = `${item.State.replace(' ', '_')},png`;
+    const imageName = `${item.State.replace(/ /g, '_')}.png`;
+    // console.log(imageName);
     const imagePath = FlagImage.GetImage(imageName);
 
     return (
       <TouchableOpacity onPress={() => navigateToStateMap(item.State)}>
         <Card style={styles.card}>
-          <Card.Cover source={require(imagePath)} />
+          <Card.Cover source={imagePath} />
           <Card.Content>
             <Title>{item.State}</Title>
             <Paragraph>
