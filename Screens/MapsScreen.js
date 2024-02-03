@@ -1,12 +1,5 @@
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Platform,
-  PermissionsAndroid,
-  PermissionsIOS,
-} from 'react-native';
+import {View, Text, StyleSheet} from 'react-native';
 import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 import Config from 'react-native-config';
 
@@ -14,11 +7,14 @@ const apiKey = Config.REACT_APP_GOOGLE_MAPS_API_KEY;
 const GeoApiKey = Config.REACT_APP_GEOAPIFY_API_KEY;
 
 function MapsScreen({route}) {
-  const {selectedState = 'Alabama'} = route.params;
+  // console.log('MapsScreen', route);
+  const {selectedState = 'New York'} = route?.params ?? {};
+
+  // console.log('selectedState', selectedState);
 
   const [isLoading, setIsLoading] = useState(true);
 
-  const [initialRegion, setInitialRegion] = useState({
+  const [region, setRegion] = useState({
     latitude: -6.17511,
     longitude: 106.82725,
     latitudeDelta: 0.0922,
@@ -33,34 +29,15 @@ function MapsScreen({route}) {
       .then(stateData => {
         const {lat = 33.2588817, lon = -86.8295337} =
           stateData.features[0].properties;
-        setInitialRegion({
+        setRegion({
           latitude: lat,
           longitude: lon,
           latitudeDelta: 0.0922,
           longitudeDelta: 0.0421,
         });
-      });
-  }, [selectedState]);
-
-  const [hasLocationPermission, setHasLocationPermission] = useState(false);
-
-  useEffect(() => {
-    requestLocationPermission()
-      .then(setHasLocationPermission)
+      })
       .finally(() => setIsLoading(false));
-  }, []);
-
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'ios') {
-      const status = await PermissionsIOS.request('location');
-      return status === 'authorized';
-    } else {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    }
-  };
+  }, [selectedState]);
 
   if (isLoading) {
     return <Text>Loading...</Text>;
@@ -72,8 +49,7 @@ function MapsScreen({route}) {
         provider={PROVIDER_GOOGLE}
         apiKey={apiKey}
         style={styles.map}
-        initialRegion={initialRegion}
-        showsUserLocation={hasLocationPermission}
+        region={region}
       />
     </View>
   );

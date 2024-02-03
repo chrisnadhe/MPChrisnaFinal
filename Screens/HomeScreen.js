@@ -26,6 +26,11 @@ const HomeScreen = () => {
     fetchData();
   }, []);
 
+  const navigateToStateMap = stateName => {
+    // console.log('navigateToStateMap', stateName);
+    navigation.navigate('MapsStack', {selectedState: stateName});
+  };
+
   const renderItem = ({item}) => {
     // const imagePath = `../assets/flags/Flag_of_${item.State.replace(' ', '_')}.png`;
     const imageName = `${item.State.replace(/ /g, '_')}.png`;
@@ -46,10 +51,6 @@ const HomeScreen = () => {
         </Card>
       </TouchableOpacity>
     );
-  };
-
-  const navigateToStateMap = stateName => {
-    navigation.navigate('MapsScreen', {selectedState: stateName});
   };
 
   return (
